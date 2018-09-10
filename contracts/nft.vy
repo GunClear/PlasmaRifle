@@ -83,10 +83,14 @@ pendingOwner: address
 def __init__():
     self.owner = msg.sender
 
+
+@public
 def nominateOwner(_owner: address):
     assert msg.sender == self.owner
+    self.pendingOwner = _owner
 
 
+@public
 def acceptOwnerNominee():
     assert msg.sender == self.pendingOwner
     self.owner = self.pendingOwner
@@ -201,14 +205,14 @@ def safeTransferFrom(
 @public
 def approve(_approved: address, _tokenId: uint256):
     # get owner
-    owner: address = self.idToApprovals[_tokenId]
+    _owner: address = self.idToApprovals[_tokenId]
     # check requirements
     senderIsOwner: bool = self.idToOwner[_tokenId] == msg.sender
-    senderIsOperator: bool = (self.ownerToOperators[owner])[msg.sender]
+    senderIsOperator: bool = (self.ownerToOperators[_owner])[msg.sender]
     assert (senderIsOwner or senderIsOperator)
     # set the approval
     self.idToApprovals[_tokenId] = _approved
-    log.Approval(owner, _approved, _tokenId)
+    log.Approval(_owner, _approved, _tokenId)
 
 
 # @dev Enables or disables approval for a third party ("operator") to manage all of
@@ -253,7 +257,6 @@ def mint(_to: address, _tokenId: uint256):
     self.idToApprovals[_tokenId] = ZERO_ADDRESS
     # Change count tracking
     self.ownerToNFTokenCount[_to] += 1
-    self.totalSupply += 1
     # Log the transfer
     log.Mint(_to, _tokenId)
 
@@ -264,7 +267,7 @@ def burn(_tokenId: uint256):
     _from: address = self.idToOwner[_tokenId]
     # Validate transfer if not the owner of the contract
     if msg.sender != self.owner:
-        self._validateTransferFrom(_from, self.address, _tokenId, msg.sender)
+        self._validateTransferFrom(_from, self, _tokenId, msg.sender)
     #else: Superpowers!
     # Reset the owner
     self.idToOwner[_tokenId] = ZERO_ADDRESS

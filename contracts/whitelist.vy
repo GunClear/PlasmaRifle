@@ -19,6 +19,7 @@ def __init__():
 @public
 def nominateOperator(_operator: address):
     assert msg.sender == self.operator
+    self.pendingOperator = _operator
 
 
 @public
