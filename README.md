@@ -1,6 +1,7 @@
 # Getting Started
 
 ## Using the Daemon
+The user can specify the location of the Ethereum node they wish to use using the following:
 
 ## Documentation
 The [wiki](https://github.com/GunClear/PlasmaRifle/wiki) serves as the public-facing documentation for this project.
