@@ -1,8 +1,33 @@
-# @dev Implementation of ERC-721 non-fungible token standard.
-# @author Jon Mardlin (@maurelian)
-# @author Bryant Eisenbach (@fubuloubu, editor)
+"""
 
-# Interface for the contract called by safeTransferFrom()
+#############################################################################
+%                                                                           %
+%                                                                           %
+%    ██████╗ ██╗   ██╗███╗   ██╗   ██████╗██╗     ███████╗ █████╗ ██████╗   %
+%   ██╔════╝ ██║   ██║████╗  ██║  ██╔════╝██║     ██╔════╝██╔══██╗██╔══██╗  %
+%   ██║      ██║   ██║██╔██╗ ██║  ██║     ██║     ██║     ██║  ██║██║  ██║  %
+%   ██║  ███╗██║   ██║██║╚██╗██║  ██║     ██║     █████╗  ███████║██████╔╝  %
+%   ██║   ██║██║   ██║██║ ╚████║  ██║     ██║     ██╔══╝  ██╔══██║██╔══██╗  %
+%   ╚██████╔╝╚██████╔╝██║  ╚███║  ╚██████╗███████╗███████╗██║  ██║██║  ██║  %
+%    ╚═════╝  ╚═════╝ ╚═╝   ╚══╝   ╚═════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝  %
+%                                                                           %
+#############################################################################
+
+  @title The GunClear GUN Token
+  @dev   ERC721 token
+         w/ Mint/Burn functionality
+         w/o Approvals or Custodialship (Operators)
+         Represents tokenized firearms
+
+  @author Bryant Eisenbach (@fubuloubu)
+
+  (C) 2018 GunClear, inc.
+
+  Made available under MIT License
+
+"""
+
+#@dev Interface for the contract called by safeTransferFrom()
 contract NFTReceiver:
     def onERC721Received(
             _operator: address,
@@ -12,89 +37,56 @@ contract NFTReceiver:
         ) -> bytes32: constant
 
 
-# @dev Emits when ownership of any NFT changes by any mechanism. This event emits when NFTs are
-#      created (`from` == 0) and destroyed (`to` == 0). Exception: during contract creation, any
-#      number of NFTs may be created and assigned without emitting Transfer. At the time of any
-#      transfer, the approved address for that NFT (if any) is reset to none.
-# @param _from Sender of NFT (if address is zero address it indicates token creation).
-# @param _to Receiver of NFT (if address is zero address it indicates token destruction).
-# @param _tokenId The NFT that got transfered.
+#@dev   Emits when ownership of any NFT changes by any mechanism. This event emits when NFTs are
+#       created (`from` == 0) and destroyed (`to` == 0).
+#@param _from       Sender of NFT (if address is zero address it indicates token creation).
+#@param _to         Receiver of NFT (if address is zero address it indicates token destruction).
+#@param _tokenId    The NFT that got transfered.
 Transfer: event({
         _from: indexed(address),
         _to: indexed(address),
         _tokenId: indexed(uint256)
     })
 
-# @dev This emits when the approved address for an NFT is changed or reaffirmed. The zero
-#      address indicates there is no approved address. When a Transfer event emits, this also
-#      indicates that the approved address for that NFT (if any) is reset to none.
-# @param _owner Owner of NFT.
-# @param _approved Address that we are approving.
-# @param _tokenId NFT which we are approving.
-Approval: event({
-        _owner: indexed(address),
-        _approved: indexed(address),
-        _tokenId: indexed(uint256)
-    })
 
-# @dev This emits when an operator is enabled or disabled for an owner. The operator can manage
-#      all NFTs of the owner.
-# @param _owner Owner of NFT.
-# @param _operator Address to which we are setting operator rights.
-# @param _approved Status of operator rights(true if operator rights are given and false if
-# revoked).
-ApprovalForAll: event({
-        _owner: indexed(address),
-        _operator: indexed(address),
-        _approved: bool
-    })
-
-
-Mint: event({
-        _to: indexed(address),
-        _tokenId:indexed(uint256)
-    })
-
-
-Burn: event({
-        _from: indexed(address),
-        _tokenId: indexed(uint256)
-    })
-
-# @dev Mapping from NFT ID to the address that owns it.
+#@dev   Mapping from NFT ID to the address that owns it.
 idToOwner: address[uint256]
 
-# @dev Mapping from NFT ID to approved address.
-idToApprovals: address[uint256]
-
-# @dev Mapping from owner address to count of his tokens.
+#@dev   Mapping from owner address to count of their tokens.
 ownerToNFTokenCount: uint256[address]
 
-# @dev Mapping from owner address to mapping of operator addresses.
-ownerToOperators: (bool[address])[address]
+#@dev   Contract owner. Has special privledges to mint new tokens.
+authority: address
 
-# @dev Contract owner. Has special privledges to mint new tokens.
-owner: address
-# @dev Transitional variables used to change owner.
-pendingOwner: address
+#@dev   Transitional variables used to change owner.
+pendingAuthority: address
 
-# @dev Contract constructor
+
+#@dev   Contract constructor. Sets the owner
 @public
 def __init__():
-    self.owner = msg.sender
+    self.authority = msg.sender
 
+
+#
+# Authority Assignee functions
+#
+
+#@
+@public
+def nominateAuthority(_authority: address):
+    assert msg.sender == self.authority
+    self.pendingAuthority = _authority
 
 @public
-def nominateOwner(_owner: address):
-    assert msg.sender == self.owner
-    self.pendingOwner = _owner
+def acceptNomination():
+    assert msg.sender == self.pendingAuthority
+    self.authority = self.pendingAuthority
 
 
-@public
-def acceptOwnerNominee():
-    assert msg.sender == self.pendingOwner
-    self.owner = self.pendingOwner
-
+#
+# ERC 721 Functions
+#
 
 # @dev Returns the number of NFTs owned by `_owner`. NFTs assigned to the zero address are
 #      considered invalid, and this function throws for queries about the zero address.
@@ -115,73 +107,21 @@ def ownerOf(_tokenId: uint256) -> address:
     assert self.idToOwner[_tokenId] != ZERO_ADDRESS
     return self.idToOwner[_tokenId]
 
-
-### TRANSFER FUNCTION HELPERS ###
-
-# NOTE: as VYPER uses a new message call for a function call, I needed to pass `_sender: address` 
-#       rather than use msg.sender
-# @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved
-#      address for this NFT. 
-# Throws if `_from` is not the current owner. 
-# Throws if `_to` is the zero address. 
-# Throws if `_tokenId` is not a valid NFT.
-@private
-def _validateTransferFrom(_from: address, _to: address, _tokenId: uint256, _sender: address):
-    # Check that _to and _from are valid addresses
-    assert _from != ZERO_ADDRESS
-    assert _to != ZERO_ADDRESS
-    # Throws if `_from` is not the current owner
-    assert self.idToOwner[_tokenId] == _from
-    # Throws unless `msg.sender` is the current owner, an authorized operator, or the approved
-    # address for this NFT. 
-    senderIsOwner: bool = self.idToOwner[_tokenId] == _sender 
-    senderIsApproved: bool = self.idToApprovals[_tokenId] == _sender
-    senderIsOperator: bool = (self.ownerToOperators[_from])[_sender]
-    assert (senderIsOwner or senderIsApproved) or senderIsOperator
+# NOTE: No regular `transferFrom` is provided as the primary use case is for locking into the Plasma contract
 
 
-@private
-def _doTransfer(_from: address, _to: address, _tokenId: uint256):
-    # Change the owner
-    self.idToOwner[_tokenId] = _to
-    # Reset approvals
-    self.idToApprovals[_tokenId] = ZERO_ADDRESS
-    # Change count tracking
-    self.ownerToNFTokenCount[_to] += 1
-    self.ownerToNFTokenCount[_from] -= 1
-    # Log the transfer
-    log.Transfer(_from, _to, _tokenId)
-
-
-### TRANSFER FUNCTIONS ###
-
-# @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved
-#      address for this NFT. 
-#      Throws if `_from` is not the current owner. 
-#      Throws if `_to` is the zero address. 
-#      Throws if `_tokenId` is not a valid NFT.
-# @notice The caller is responsible to confirm that `_to` is capable of receiving NFTs or else
-#         they maybe be permanently lost.
-# @param _from The current owner of the NFT.
-# @param _to The new owner.
-# @param _tokenId The NFT to transfer.
-@public
-def transferFrom(_from: address, _to: address, _tokenId: uint256):
-    self._validateTransferFrom(_from, _to, _tokenId, msg.sender)
-    self._doTransfer(_from, _to, _tokenId)  
-
-
-# @dev Transfers the ownership of an NFT from one address to another address.
-# @notice Throws unless `msg.sender` is the current owner, an authorized operator, or the
-#         approved address for this NFT. Throws if `_from` is not the current owner. Throws if `_to` is
-#         the zero address. Throws if `_tokenId` is not a valid NFT. When transfer is complete, this
-#         function checks if `_to` is a smart contract (code size > 0). If so, it calls `onERC721Received`
-#         on `_to` and throws if the return value is not `bytes4(keccak256("onERC721Received(address,uint256,bytes)"))`.
-#         NOTE: bytes4 is represented by bytes32 with padding
-# @param _from The current owner of the NFT.
-# @param _to The new owner.
-# @param _tokenId The NFT to transfer.
-# @param _data Additional data with no specified format, sent in call to `_to`.
+# @dev Transfers the ownership of an NFT to another address.
+# @notice   Throws unless `msg.sender` is the current owner
+#           Throws if `_to` is the zero address.
+#           Throws if `_tokenId` is not a valid NFT (aka is zero).
+#           When transfer is complete, this function checks if `_to` is a smart contract (code size > 0).
+#           If so, it calls `onERC721Received()` on `_to` and throws if the return value is not
+#               `bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"))`
+#           NOTE: bytes4 (the official ABI spec for this feature) is represented by bytes32 with padding
+# @param _from The current owner of the NFT [UNUSED]
+# @param _to The new owner
+# @param _tokenId The NFT to transfer
+# @param _data Additional data with no specified format, sent in call to `_to` [UNUSED]
 @public
 def safeTransferFrom(
         _from: address,
@@ -189,91 +129,80 @@ def safeTransferFrom(
         _tokenId: uint256,
         _data: bytes[1024]=""
     ):
-    self._validateTransferFrom(_from, _to, _tokenId, msg.sender)
-    self._doTransfer(_from, _to, _tokenId)
-    _operator: address = ZERO_ADDRESS
-    if(_to.codesize > 0):
-        returnValue: bytes32 = NFTReceiver(_to).onERC721Received(_operator, _from, _tokenId, _data)
-        assert returnValue == method_id("onERC721Received(address,address,uint256,bytes)", bytes32)
-  
 
-# @dev Set or reaffirm the approved address for an NFT.
-# @notice The zero address indicates there is no approved address. Throws unless `msg.sender` is
-#         the current NFT owner, or an authorized operator of the current owner.
-# @param _approved Address to be approved for the given NFT ID.
-# @param _tokenId ID of the token to be approved.
-@public
-def approve(_approved: address, _tokenId: uint256):
-    # get owner
-    _owner: address = self.idToApprovals[_tokenId]
-    # check requirements
-    senderIsOwner: bool = self.idToOwner[_tokenId] == msg.sender
-    senderIsOperator: bool = (self.ownerToOperators[_owner])[msg.sender]
-    assert (senderIsOwner or senderIsOperator)
-    # set the approval
-    self.idToApprovals[_tokenId] = _approved
-    log.Approval(_owner, _approved, _tokenId)
+    # Check that _to is valid addresses (non-zero)
+    assert _to != ZERO_ADDRESS
 
-
-# @dev Enables or disables approval for a third party ("operator") to manage all of
-#      `msg.sender`'s assets. It also emits the ApprovalForAll event.
-# @notice This works even if sender doesn't own any tokens at the time.
-# @param _operator Address to add to the set of authorized operators.
-# @param _approved True if the operators is approved, false to revoke approval.
-@public
-def setApprovalForAll(_operator: address, _approved: bool):
-    assert _operator != ZERO_ADDRESS
-    self.ownerToOperators[msg.sender][_operator] = _approved
-    log.ApprovalForAll(msg.sender, _operator, _approved)
-
-
-# @dev Get the approved address for a single NFT.
-# @notice Throws if `_tokenId` is not a valid NFT.
-# @param _tokenId ID of the NFT to query the approval of.
-@public
-@constant
-def getApproved(_tokenId: uint256) -> address:
-    assert self.idToOwner[_tokenId] != ZERO_ADDRESS
-    return self.idToApprovals[_tokenId]
-
-
-# @dev Checks if `_operator` is an approved operator for `_owner`.
-# @param _owner The address that owns the NFTs.
-# @param _operator The address that acts on behalf of the owner.
-@public 
-@constant
-def isApprovedForAll(_owner: address, _operator: address) -> bool:
-    if (_owner == ZERO_ADDRESS):
-        return False
-    return (self.ownerToOperators[_owner])[_operator]
-
-
-# @dev Mint new token with ID `_tokenID` to `_owner`
-@public
-def mint(_to: address, _tokenId: uint256):
-    assert msg.sender == self.owner
+    # Throws if `msg.sender` is not the current owner
+    assert self.idToOwner[_tokenId] == msg.sender
+    
+    # Change the owner
     self.idToOwner[_tokenId] = _to
-    # Reset approvals
-    self.idToApprovals[_tokenId] = ZERO_ADDRESS
+    
     # Change count tracking
     self.ownerToNFTokenCount[_to] += 1
+    self.ownerToNFTokenCount[msg.sender] -= 1
+    
     # Log the transfer
-    log.Mint(_to, _tokenId)
+    log.Transfer(msg.sender, _to, _tokenId)
+    
+    # If the reciever is a smart contract, then ensure it executes a "safe" transaction by validating the return code
+    if(_to.codesize > 0):
+        # Does NOT forward data as the PlasmaRifle smart contract doesn't expect it
+        returnValue: bytes32 = NFTReceiver(_to).onERC721Received(msg.sender, msg.sender, _tokenId, "")
+        # Validate the return code is the correct method ID
+        assert returnValue == method_id("onERC721Received(address,address,uint256,bytes)", bytes32)
 
 
+#@dev Mint new token with ID `_tokenID` to `_owner`
+#@notice    This function allows the authority to mint a new token to the specified recipient
+#           The token must not currently exist
+#           The `tokenId` is generated by the authority, and is composed of the serial number
+#           and a secret nonce that is only made available to selected parties, both of which
+#           are hashed together to generate the tokenId (and converted to uint256)
+#           In order to limit the depth of the SMT storing these tokens in the Gunero network,
+#           only the first 20 bytes are used to represent the tokenId. This should be acceptable
+#@param _to         Recipient of the NFT
+#@param _tokenId    The Id of the newly minted token
+@public
+def mint(_to: address, _tokenId: uint256):
+    # Only the authority can mint
+    assert msg.sender == self.authority
+
+    # A token can be minted only if it doesn't exist (is unowned)
+    assert self.idToOwner[_tokenId] == ZERO_ADDRESS
+
+    # Give the token to the mintee
+    self.idToOwner[_tokenId] = _to
+
+    # Change count tracking
+    self.ownerToNFTokenCount[_to] += 1
+
+    # Log the transfer
+    log.Transfer(ZERO_ADDRESS, _to, _tokenId)
+
+
+#@dev   Burns an existing token with ID `_tokenId`
+#@notice    This function allows the authority or the current owner to "burn" or remove the
+#           specified token from the supply. At that point, it is no longer considered to be
+#           tracking the underlying asset at all, as it has been decided to remove it from the
+#           system.
+#@param _tokenId    The Id of the token to be destroyed
 @public
 def burn(_tokenId: uint256):
     # Obtain the owner of the token
     _from: address = self.idToOwner[_tokenId]
-    # Validate transfer if not the owner of the contract
+
+    # Validate ownership of token if not the authority
     if msg.sender != self.owner:
-        self._validateTransferFrom(_from, self, _tokenId, msg.sender)
-    #else: Superpowers!
-    # Reset the owner
+        assert _from == msg.sender
+    #else: Authority has superpowers!
+
+    # Reset the owner (destroys the token)
     self.idToOwner[_tokenId] = ZERO_ADDRESS
-    # Reset approvals
-    self.idToApprovals[_tokenId] = ZERO_ADDRESS
+
     # Change count tracking
     self.ownerToNFTokenCount[_from] -= 1
+
     # Log the transfer
-    log.Burn(_from, _tokenId)
+    log.Transfer(_from, ZERO_ADDRESS, _tokenId)
