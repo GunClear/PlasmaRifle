@@ -11,7 +11,7 @@ assets:
 contracts:
  - &TokenManager GunClear Token contract
  - &Whitelist User Whitelist contract
- - &PlasmaBridge *Gunero Bridge contract
+ - &PlasmaBridge Gunero Bridge contract
 
 times:
  - &DisputePeriod 30 day dispute period
