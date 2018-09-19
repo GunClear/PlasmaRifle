@@ -1,0 +1,45 @@
+type: "requirements"
+
+users:
+ - &Authority GunClear Platform Manager
+ - &User Registered GunClear User
+ - &Gunero Gunero Plasma Sidechain
+ 
+assets:
+ - &GunToken token representing a known firearm
+ 
+contracts:
+ - &TokenManager GunClear Token contract
+ - &Whitelist User Whitelist contract
+ - &PlasmaBridge Gunero Bridge contract
+
+times:
+ - &DisputePeriod 30 day dispute period
+ - &PlasmaCycle 7 day Gunero synchronization cycle
+
+requirements:
+ # Token contract requirements
+ - The *TokenManager shall allow the *Authority to mint a new *GunToken to a *User.
+ - The *TokenManager shall allow a *User to transfer their *GunToken to any Ethereum address.
+ - The *TokenManager shall allow a *User to transfer their *GunToken into the *PlasmaBridge.
+ - The *TokenManager shall allow any *User and the *Authority to burn any *GunToken they own.
+ # Whitelist contract requirements
+ - The *Whitelist shall allow the *Authority to change a *User's current status.
+ - The *Whitelist shall allow a *User to dispute their current status within a *DisputePeriod.
+ - The *Whitelist shall allow the *Authority to finalize a change in status after a *DisputePeriod.
+ - Status changes in the *Whitelist will be updated by the *Authority at least once during a *PlasmaCycle.
+ - The *Whitelist shall maintain the current merkle root of the associated list.
+ - The *Whitelist shall allow a *User to generate a merkle proof of inclusion without sharing their identity.
+ # Plasma contract requirements
+ - The *PlasmaBridge shall aaccept any *GunToken issued by the *Authority.
+ - The *PlasmaBridge shall report the status of any *GunToken it has received.
+ - The *PlasmaBridge shall allow a *User to withdraw a *GunToken they control at any time.
+ - The *PlasmaBridge shall allow a *User to declare a *GunToken they control to be lost or stolen.
+ - The *PlasmaBridge shall allow a *User who has declared a *GunToken they control to be lost or stolen to reset that status within a *DisputePeriod.
+ - The *TokenManager shall allow the *Authority to withdraw a *GunToken that has been declared lost or stolen in the *PlasmaBridge after a *DisputePeriod.
+ - The *PlasmaBridge shall allow a *User to claim a *GunToken they no longer have access to is inaccessible.
+ - The *PlasmaBridge shall allow any other *User who controls a *GunToken that is claimed inaccessible to dispute this claim within a *DisputePeriod.
+ - The *PlasmaBridge shall allow the *Authority to withdraw a *GunToken that is claimed inaccessible after a *DisputePeriod.
+ - Block updates for the *Gunero network will be published at least once during a *PlasmaCycle.
+ - A *GunToken cannot be withdrawn form or transferred within the *Gunero network more than once every *PlasmaCycle.
+ 
