@@ -1,31 +1,29 @@
-"""
+#
+############################################################################
+#%                                                                         %
+#%    ██████╗                     ██████╗                                  %
+#%   ██╔════╝ ██╗   ██╗███╗  ██╗ ██╔════╝██╗     ███████╗ █████╗ ██████╗   %
+#%   ██║      ██║   ██║████╗ ██║ ██║     ██║     ██╔════╝██║  ██╗██║  ██╗  %
+#%   ██║  ███╗██║   ██║██╔██╗██║ ██║     ██║     █████╗  ███████║██████╔╝  %
+#%   ██║   ██║██║   ██║██║╚████║ ██║     ██║     ██╔══╝  ██╔══██║██╔══██╗  %
+#%   ╚██████╔╝╚██████╔╝██║ ╚███║ ╚██████╗███████╗███████╗██║  ██║██║  ██║  %
+#%    ╚═════╝  ╚═════╝ ╚═╝  ╚══╝  ╚═════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝  %
+#%                                                                         %
+############################################################################
+#
+#  @title The GunClear GUN Token
+#  @dev   ERC721 token
+#         w/ Mint/Burn functionality
+#         w/o Approvals or Custodialship (Operators)
+#         Represents tokenized firearms
+#
+#  @author Bryant Eisenbach (@fubuloubu)
+#
+#  (C) 2018 GunClear, inc.
+#
+#  Made available under MIT License
+#
 
-#############################################################################
-%                                                                           %
-%                                                                           %
-%    ██████╗ ██╗   ██╗███╗   ██╗   ██████╗██╗     ███████╗ █████╗ ██████╗   %
-%   ██╔════╝ ██║   ██║████╗  ██║  ██╔════╝██║     ██╔════╝██╔══██╗██╔══██╗  %
-%   ██║      ██║   ██║██╔██╗ ██║  ██║     ██║     ██║     ██║  ██║██║  ██║  %
-%   ██║  ███╗██║   ██║██║╚██╗██║  ██║     ██║     █████╗  ███████║██████╔╝  %
-%   ██║   ██║██║   ██║██║ ╚████║  ██║     ██║     ██╔══╝  ██╔══██║██╔══██╗  %
-%   ╚██████╔╝╚██████╔╝██║  ╚███║  ╚██████╗███████╗███████╗██║  ██║██║  ██║  %
-%    ╚═════╝  ╚═════╝ ╚═╝   ╚══╝   ╚═════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝  %
-%                                                                           %
-#############################################################################
-
-  @title The GunClear GUN Token
-  @dev   ERC721 token
-         w/ Mint/Burn functionality
-         w/o Approvals or Custodialship (Operators)
-         Represents tokenized firearms
-
-  @author Bryant Eisenbach (@fubuloubu)
-
-  (C) 2018 GunClear, inc.
-
-  Made available under MIT License
-
-"""
 
 #@dev Interface for the contract called by safeTransferFrom()
 contract NFTReceiver:
@@ -148,10 +146,10 @@ def safeTransferFrom(
     
     # If the reciever is a smart contract, then ensure it executes a "safe" transaction by validating the return code
     if(_to.codesize > 0):
-        # Does NOT forward data as the PlasmaRifle smart contract doesn't expect it
-        returnValue: bytes32 = NFTReceiver(_to).onERC721Received(msg.sender, msg.sender, _tokenId, "")
+        returnValue: bytes32 = NFTReceiver(_to). \
+                onERC721Received(msg.sender, msg.sender, _tokenId, _data)
         # Validate the return code is the correct method ID
-        assert returnValue == method_id("onERC721Received(address,address,uint256,bytes)", bytes32)
+        assert returnValue == method_id('onERC721Received(address,address,uint256,bytes)', bytes32)
 
 
 #@dev Mint new token with ID `_tokenID` to `_owner`
@@ -178,31 +176,25 @@ def mint(_to: address, _tokenId: uint256):
     # Change count tracking
     self.ownerToNFTokenCount[_to] += 1
 
-    # Log the transfer
+    # Log the transfer (A "mint" is a transfer from the zero addr)
     log.Transfer(ZERO_ADDRESS, _to, _tokenId)
 
 
 #@dev   Burns an existing token with ID `_tokenId`
-#@notice    This function allows the authority or the current owner to "burn" or remove the
-#           specified token from the supply. At that point, it is no longer considered to be
-#           tracking the underlying asset at all, as it has been decided to remove it from the
-#           system.
+#@notice    This function allows the current owner to "burn" or remove the specified token from
+#           the supply. At that point, it is no longer considered to be tracking the underlying
+#           asset at all, as it has been decided to remove it from the system.
 #@param _tokenId    The Id of the token to be destroyed
 @public
 def burn(_tokenId: uint256):
-    # Obtain the owner of the token
-    _from: address = self.idToOwner[_tokenId]
+    # Validate ownership of token
+    assert msg.sender == self.idToOwner[_tokenId]
 
-    # Validate ownership of token if not the authority
-    if msg.sender != self.owner:
-        assert _from == msg.sender
-    #else: Authority has superpowers!
-
-    # Reset the owner (destroys the token)
+    # Reset the owner for tokenId (destroys the token)
     self.idToOwner[_tokenId] = ZERO_ADDRESS
 
     # Change count tracking
     self.ownerToNFTokenCount[_from] -= 1
 
-    # Log the transfer
+    # Log the transfer (A "burn" is a transfer to the zero addr)
     log.Transfer(_from, ZERO_ADDRESS, _tokenId)
