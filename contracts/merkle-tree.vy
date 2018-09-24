@@ -58,30 +58,43 @@ def _set(_key: bytes32, _value: bytes32, _proof: bytes32[160]):
     
     # Validate each step of the proof is correct
     # Also, keep track of the merklized updates
-    for i in range(159): # 160-1, start at end of proof and travel upwards
-        lvl: int128 = 160-1 - i  # 159 to 1
-        #if _key & 2**i > 0:
-        assert _proof[lvl] == keccak256(concat(_proof[lvl-1], prior_node_hash))
-        proof_updates[lvl] = keccak256(concat(_proof[lvl-1], new_node_hash))
-        #else: flip ^
+    for i in range(159): # 0 to 160-1, start at end of proof and travel upwards
+        lvl: int128 = 160-1 - i  # 159 to 1 (159 - [0:158] = [159:1])
+
+        if convert(_key, 'uint256') & 2**convert(i, 'uint256') > 0:
+            assert _proof[lvl] == keccak256(concat(_proof[lvl-1], prior_node_hash))
+            proof_updates[lvl] = keccak256(concat(_proof[lvl-1], new_node_hash))
+        else:
+            assert _proof[lvl] == keccak256(concat(prior_node_hash, _proof[lvl-1]))
+            proof_updates[lvl] = keccak256(concat(new_node_hash, _proof[lvl-1]))
+
         # Update loop variables
         prior_node_hash = _proof[lvl]
         new_node_hash = proof_updates[lvl]
     
     # Validate root hash
-    #if _key & 2**(160-1) > 0:
-    assert self.root == keccak256(concat(_proof[0], prior_node_hash))
-    self.root = keccak256(concat(_proof[0], new_node_hash))
-    #else: flip ^
+    if convert(_key, 'uint256') & 2**(160-1) > 0:
+        assert self.root == keccak256(concat(_proof[0], prior_node_hash))
+        self.root = keccak256(concat(_proof[0], new_node_hash))
+    else:
+        assert self.root == keccak256(concat(prior_node_hash, _proof[0]))
+        self.root = keccak256(concat(new_node_hash, _proof[0]))
     
-    # First update in the proof is the root hash
+    # Update the root hash for the updated proof
     proof_updates[0] = self.root
 
     # Finally update value in db since we validated the proof
     self.db[_key] = _value
 
-    # Emit update so those listening at home can follow along
+    # Emit updated proof so those listening at home can follow along
+    # through event filtering
     log.UpdatedBranch(_key, _value, proof_updates)
+    # NOTE: Clients can subscribe to these events and filter on keys
+    #       that match theirs via `not(bitxor(update.key, my_key))`.
+    #       The first K bits that match theirs should be processed
+    #       because they are on the same branch (diverging at K+1).
+    #       This reduces the total amount of processing the client
+    #       does when iterating through logs from this contract.
 
 
 @public
