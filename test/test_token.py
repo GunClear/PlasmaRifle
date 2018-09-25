@@ -85,7 +85,9 @@ def test_safeTransferFrom_account(t, token_m):
 from vyper.compiler import compile as vyc
 from vyper.compiler import mk_full_signature as vya
 
-CODE = """
+@pytest.fixture
+def good_receiver(t):
+    CODE = """
 @public
 def onERC721Received(
         _operator: address,
@@ -94,9 +96,7 @@ def onERC721Received(
         _data: bytes[1024]
     ) -> bytes32:
     return method_id("onERC721Received(address,address,uint256,bytes)", bytes32)
-"""
-@pytest.fixture
-def good_receiver(t):
+    """
     return t.new_contract({
             'abi': vya(CODE),
             'bytecode': vyc(CODE),
@@ -105,11 +105,22 @@ def good_receiver(t):
 
 
 @pytest.fixture
-def bad_receiver(t, good_receiver):
-    return t.new_contract({'abi': vya(CODE),
-        'bytecode': '0x0',
-        'bytecode_runtime': '0x31300100'
-    })()
+def bad_receiver(t):
+    CODE = """
+@public
+def onERC721Received(
+        _operator: address,
+        _from: address,
+        _tokenId: uint256,
+        _data: bytes[1024]
+    ) -> bytes32:
+    return method_id("NOT_RIGHT", bytes32)
+    """
+    return t.new_contract({
+            'abi': vya(CODE),
+            'bytecode': vyc(CODE),
+            'bytecode_runtime': vyc(CODE, bytecode_runtime=True)
+        })()
 
 
 def test_safeTransferFrom_contracts(t, token_m, good_receiver, bad_receiver):
