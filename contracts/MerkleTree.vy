@@ -19,7 +19,7 @@ UpdatedBranch: event({
 
 
 # Root of the tree. Used to validate state transitions
-root: bytes32  # Must be initialized for an empty tree
+root: public(bytes32)  # Must be initialized for an empty tree
 
 # "key" denotes path from root to leaf (1 is right, 0 is left)
 db: bytes32[bytes32]  # Key: Value DB (empty to start)
@@ -100,5 +100,5 @@ def _set(_key: bytes32, _value: bytes32, _proof: bytes32[160]):
 
 
 @public
-def set(_key: bytes32, _value: bytes32, _proof: bytes32[160]):
-    self._set(_key, _value, _proof)
+def set(_value: uint256, _proof: bytes32[160]):
+    self._set(bytes32(msg.sender), convert(_value, bytes32), _proof)
