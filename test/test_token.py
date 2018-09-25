@@ -1,8 +1,10 @@
 import pytest
 
+
 @pytest.fixture
 def token(t):
     return t.c('contracts/gun-token.vy')()
+
 
 def test_nominateAuthority(t, token):
     # The authority is whomever deployed the contract
@@ -23,7 +25,10 @@ def test_nominateAuthority(t, token):
     token.acceptNomination(transact={'from':t.a[1]})
     assert token.authority() == t.a[1]
 
+
 TOKEN_ID = 123
+
+
 def test_mint(t, token):
     assert token.balanceOf(t.a[1]) == 0  # For later
     # Only the authority can mint
@@ -43,6 +48,7 @@ def token_m(t, token):
     token.mint(t.a[1], TOKEN_ID, transact={'from':t.a[0]})
     return token
 
+
 def test_burn(t, token_m):
     # No one can burn a token they don't own
     assert token.ownerOf(TOKEN_ID) != t.a[2]
@@ -61,6 +67,7 @@ def test_burn(t, token_m):
     with t.tx_fails:
         token.ownerOf(TOKEN_ID)
 
+
 def test_safeTransferFrom_account(t, token_m):
     assert token_m.balanceOf(t.a[1]) == 1
     assert token_m.balanceOf(t.a[2]) == 0
@@ -74,11 +81,13 @@ def test_safeTransferFrom_account(t, token_m):
     assert token_m.balanceOf(t.a[1]) == 0
     assert token_m.balanceOf(t.a[2]) == 1    
 
-import vyper.compile
+
+from vyper.compiler import compile as vyc
+from vyper.compiler import mk_full_signature as vya
 
 @pytest.fixture
 def good_receiver(t):
-    return t.get_contract(compile("""
+    code = """
 @public
 def onERC721Received(
         _operator: address,
@@ -87,7 +96,13 @@ def onERC721Received(
         _data: bytes[1024]
     ) -> bytes32:
     return method_id("onERC721Received(address,address,uint256,bytes)", bytes32)
-    """))
+    """
+    return t.get_contract({
+            'abi': vya(code),
+            'bytecode': vyc(code),
+            'bytecode_runtime': vyc(code, bytecode_runtime=True)
+        })
+
 
 @pytest.fixture
 def bad_receiver(t, good_receiver):
@@ -95,6 +110,7 @@ def bad_receiver(t, good_receiver):
         'bytecode': '0x0',
         'bytecode_runtime': '0x0'
     })
+
 
 def test_safeTransferFrom_contracts(t, token_m, good_receiver, bad_receiver):
     assert token_m.balanceOf(t.a[1]) == 1
