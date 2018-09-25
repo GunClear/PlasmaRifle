@@ -51,21 +51,21 @@ def token_m(t, token):
 
 def test_burn(t, token_m):
     # No one can burn a token they don't own
-    assert token.ownerOf(TOKEN_ID) != t.a[2]
+    assert token_m.ownerOf(TOKEN_ID) != t.a[2]
     with t.tx_fails:
-        token.burn(TOKEN_ID, transact={'from':t.a[2]})
+        token_m.burn(TOKEN_ID, transact={'from':t.a[2]})
     # Not even the authority
     with t.tx_fails:
-        token.burn(TOKEN_ID, transact={'from':t.a[0]})
+        token_m.burn(TOKEN_ID, transact={'from':t.a[0]})
     # Only the owner can burn it
-    assert token.balanceOf(t.a[1]) == 1  # for later...
-    assert token.ownerOf(TOKEN_ID) == t.a[1]
-    token.burn(TOKEN_ID, transact={'from':t.a[1]})
-    # Burning a token removes it from the supply
-    assert token.balanceOf(t.a[1]) == 0
-    # An unowned token will throw when queried
+    assert token_m.balanceOf(t.a[1]) == 1  # for later...
+    assert token_m.ownerOf(TOKEN_ID) == t.a[1]
+    token_m.burn(TOKEN_ID, transact={'from':t.a[1]})
+    # Burning a token_m removes it from the supply
+    assert token_m.balanceOf(t.a[1]) == 0
+    # An unowned token_m will throw when queried
     with t.tx_fails:
-        token.ownerOf(TOKEN_ID)
+        token_m.ownerOf(TOKEN_ID)
 
 
 def test_safeTransferFrom_account(t, token_m):
@@ -85,9 +85,7 @@ def test_safeTransferFrom_account(t, token_m):
 from vyper.compiler import compile as vyc
 from vyper.compiler import mk_full_signature as vya
 
-@pytest.fixture
-def good_receiver(t):
-    code = """
+CODE = """
 @public
 def onERC721Received(
         _operator: address,
@@ -96,20 +94,22 @@ def onERC721Received(
         _data: bytes[1024]
     ) -> bytes32:
     return method_id("onERC721Received(address,address,uint256,bytes)", bytes32)
-    """
-    return t.get_contract({
-            'abi': vya(code),
-            'bytecode': vyc(code),
-            'bytecode_runtime': vyc(code, bytecode_runtime=True)
-        })
+"""
+@pytest.fixture
+def good_receiver(t):
+    return t.new_contract({
+            'abi': vya(CODE),
+            'bytecode': vyc(CODE),
+            'bytecode_runtime': vyc(CODE, bytecode_runtime=True)
+        })()
 
 
 @pytest.fixture
 def bad_receiver(t, good_receiver):
-    return t.new_contract({'abi': good_receiver.abi,
+    return t.new_contract({'abi': vya(CODE),
         'bytecode': '0x0',
-        'bytecode_runtime': '0x0'
-    })
+        'bytecode_runtime': '0x31300100'
+    })()
 
 
 def test_safeTransferFrom_contracts(t, token_m, good_receiver, bad_receiver):
