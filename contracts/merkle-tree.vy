@@ -61,7 +61,8 @@ def _set(_key: bytes32, _value: bytes32, _proof: bytes32[160]):
     for i in range(159): # 0 to 160-1, start at end of proof and travel upwards
         lvl: int128 = 160-1 - i  # 159 to 1 (159 - [0:158] = [159:1])
 
-        if convert(_key, 'uint256') & 2**convert(i, 'uint256') > 0:
+        #if convert(_key, 'uint256') & 2**convert(i, 'uint256') > 0:
+        if ((convert(_key, 'uint256') % 2**(convert(i, 'uint256')+1)) > (2**convert(i, 'uint256'))-1):
             assert _proof[lvl] == keccak256(concat(_proof[lvl-1], prior_node_hash))
             proof_updates[lvl] = keccak256(concat(_proof[lvl-1], new_node_hash))
         else:
@@ -73,7 +74,8 @@ def _set(_key: bytes32, _value: bytes32, _proof: bytes32[160]):
         new_node_hash = proof_updates[lvl]
     
     # Validate root hash
-    if convert(_key, 'uint256') & 2**(160-1) > 0:
+    #if convert(_key, 'uint256') & 1 > 0:
+    if (convert(_key, 'uint256') % 2 > 0):
         assert self.root == keccak256(concat(_proof[0], prior_node_hash))
         self.root = keccak256(concat(_proof[0], new_node_hash))
     else:
