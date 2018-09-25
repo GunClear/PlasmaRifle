@@ -54,10 +54,10 @@ idToOwner: address[uint256]
 ownerToNFTokenCount: uint256[address]
 
 #@dev   Contract owner. Has special privledges to mint new tokens.
-authority: address
+authority: public(address)
 
 #@dev   Transitional variables used to change owner.
-pendingAuthority: address
+pendingAuthority: public(address)
 
 
 #@dev   Contract constructor. Sets the owner
@@ -194,7 +194,7 @@ def burn(_tokenId: uint256):
     self.idToOwner[_tokenId] = ZERO_ADDRESS
 
     # Change count tracking
-    self.ownerToNFTokenCount[_from] -= 1
+    self.ownerToNFTokenCount[msg.sender] -= 1
 
     # Log the transfer (A "burn" is a transfer to the zero addr)
-    log.Transfer(_from, ZERO_ADDRESS, _tokenId)
+    log.Transfer(msg.sender, ZERO_ADDRESS, _tokenId)
