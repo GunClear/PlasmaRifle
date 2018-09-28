@@ -40,13 +40,13 @@ contract Whitelist:
 
 
 # Plasma chain operator
-operator: address
+operator: public(address)
 
 
 # Whitelist and Plasma-chain roots are synchronized every 7 days
-plasmachain_root: bytes32
+plasmachain_root: public(bytes32)
 PLASMA_SYNC_TIME: timedelta = constant(604800) # 7 days in secs
-last_synced: timestamp
+last_synced: public(timestamp)
 
 
 # 28 day checkpoint history (not including current setpoints)
