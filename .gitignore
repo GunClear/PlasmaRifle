@@ -1,0 +1,3 @@
+# Ignore rust build directory
+Cargo.lock
+target/

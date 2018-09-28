@@ -1,0 +1,15 @@
+[package]
+name = "plasma_rifle"
+version = "0.1.0"
+authors = ["Bryant Eisenbach <fubuloubu@gmail.com>"]
+
+[lib]
+name = "plasma_rifle"
+path = "src/lib.rs"
+
+[[bin]]
+name = "plasma-rifle-daemon"
+path = "src/bin.rs"
+
+[dependencies]
+web3 = { git = "https://github.com/tomusdrw/rust-web3" }
