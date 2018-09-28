@@ -1,4 +1,4 @@
-## Whitelist of accounts
+## Authlist of accounts
 # Accounts that are allowed to participate in a GunClear transaction
 # Merklized into a Simple Binary Merkle Tree for access
 

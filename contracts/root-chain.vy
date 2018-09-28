@@ -33,8 +33,8 @@
 #       - NOTE: contract storage of history prior to 2 most recent checkpoints is not available
 
 
-# Interface to the whitelist
-contract Whitelist:
+# Interface to the authlist
+contract Authlist:
     def root() -> bytes32: constant
     def status(_user) -> uint256: constant
 
@@ -43,7 +43,7 @@ contract Whitelist:
 operator: public(address)
 
 
-# Whitelist and Plasma-chain roots are synchronized every 7 days
+# Authlist and Plasma-chain roots are synchronized every 7 days
 plasmachain_root: public(bytes32)
 PLASMA_SYNC_TIME: timedelta = constant(604800) # 7 days in secs
 last_synced: public(timestamp)
@@ -51,12 +51,12 @@ last_synced: public(timestamp)
 
 # 28 day checkpoint history (not including current setpoints)
 # 28/7 - 1 = 3
-root_history: {whitelist: bytes32, plasma: bytes32}[3]
+root_history: {authlist: bytes32, plasma: bytes32}[3]
 
 
-def __init__(_whitelist: address):
+def __init__(_authlist: address):
     self.operator = msg.sender
-    self.whitelist = Whitelist(_whitelist)
+    self.authlist = Authlist(_authlist)
     self.last_synced = 0  # Let the operator publish a block immediately
     # Note: root_history is left empty
 
@@ -74,7 +74,7 @@ def addBlock(_plasma_root: bytes32):
 
     # Push current
     self.root_history[2] = {
-        whitelist: self.whitelist.root(),
+        authlist: self.authlist.root(),
         plasma: self.plasmachain_root
     }
 

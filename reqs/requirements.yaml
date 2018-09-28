@@ -10,7 +10,7 @@ assets:
  
 contracts:
  - &TokenManager GunClear Token contract
- - &Whitelist User Whitelist contract
+ - &Authlist User Authlist contract
  - &PlasmaBridge Gunero Bridge contract
 
 times:
@@ -23,13 +23,13 @@ requirements:
  - The *TokenManager shall allow a *User to transfer their *GunToken to any Ethereum address.
  - The *TokenManager shall allow a *User to transfer their *GunToken into the *PlasmaBridge.
  - The *TokenManager shall allow any *User and the *Authority to burn any *GunToken they own.
- # Whitelist contract requirements
- - The *Whitelist shall allow the *Authority to change a *User's current status.
- - The *Whitelist shall allow a *User to dispute their current status within a *DisputePeriod.
- - The *Whitelist shall allow the *Authority to finalize a change in status after a *DisputePeriod.
- - Status changes in the *Whitelist will be updated by the *Authority at least once during a *PlasmaCycle.
- - The *Whitelist shall maintain the current merkle root of the associated list.
- - The *Whitelist shall allow a *User to generate a merkle proof of inclusion without sharing their identity.
+ # Authlist contract requirements
+ - The *Authlist shall allow the *Authority to change a *User's current status.
+ - The *Authlist shall allow a *User to dispute their current status within a *DisputePeriod.
+ - The *Authlist shall allow the *Authority to finalize a change in status after a *DisputePeriod.
+ - Status changes in the *Authlist will be updated by the *Authority at least once during a *PlasmaCycle.
+ - The *Authlist shall maintain the current merkle root of the associated list.
+ - The *Authlist shall allow a *User to generate a merkle proof of inclusion without sharing their identity.
  # Plasma contract requirements
  - The *PlasmaBridge shall aaccept any *GunToken issued by the *Authority.
  - The *PlasmaBridge shall report the status of any *GunToken it has received.
