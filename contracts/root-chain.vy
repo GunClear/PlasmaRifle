@@ -31,3 +31,52 @@
 #   checkpointTime: 28 days (4 sync periods)
 #       - can only issue challenges up to the 2nd most previous checkpoint
 #       - NOTE: contract storage of history prior to 2 most recent checkpoints is not available
+
+
+# Interface to the whitelist
+contract Whitelist:
+    def root() -> bytes32: constant
+    def status(_user) -> uint256: constant
+
+
+# Plasma chain operator
+operator: address
+
+
+# Whitelist and Plasma-chain roots are synchronized every 7 days
+plasmachain_root: bytes32
+PLASMA_SYNC_TIME: timedelta = constant(604800) # 7 days in secs
+last_synced: timestamp
+
+
+# 28 day checkpoint history (not including current setpoints)
+# 28/7 - 1 = 3
+root_history: {whitelist: bytes32, plasma: bytes32}[3]
+
+
+def __init__(_whitelist: address):
+    self.operator = msg.sender
+    self.whitelist = Whitelist(_whitelist)
+    self.last_synced = 0  # Let the operator publish a block immediately
+    # Note: root_history is left empty
+
+
+def addBlock(_plasma_root: bytes32):
+    # Only operator can submit a new root
+    assert msg.sender == self.operator
+
+    # Enough time has passed
+    assert blk.timestamp - self.last_synced >= PLASMA_SYNC_TIME
+
+    # Pop oldest and shuffle
+    self.root_history[0] = self.root_history[1]
+    self.root_history[1] = self.root_history[2]
+
+    # Push current
+    self.root_history[2] = {
+        whitelist: self.whitelist.root(),
+        plasma: self.plasmachain_root
+    }
+
+    # Set current plasma root
+    self.plasmachain_root = _plasma_root
