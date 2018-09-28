@@ -9,7 +9,7 @@ pendingOperator: address
 # 0: not valid user
 # 1: valid user
 # 2: pending review
-# 3: blacklisted
+# 3: banned
 status: public(uint256[address])
 
 
