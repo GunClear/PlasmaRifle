@@ -106,7 +106,7 @@ def _set(_account: address, _status: uint256, _proof: bytes32[KEYLEN]):
     self.status[_account] = _status
 
     # Make sure we emit the updates for anyone listening along to track
-    log.UpdatedBranch(_account, _status, node_updates)
+    log.TreeUpdate(_account, _status, node_updates)
 
 
 # The operator can authorize a user at any time
@@ -123,7 +123,7 @@ def authorize(_account: address, _proof: bytes32[KEYLEN]):
 def review(_account: address, _proof: bytes32[KEYLEN]):
     assert msg.sender == self.operator
     assert self.status[_account] == 1
-    self.review_started[_account] = blk.timestamp
+    self.review_started[_account] = block.timestamp
     self._set(_account, 2, _proof)
 
 
@@ -132,5 +132,5 @@ def review(_account: address, _proof: bytes32[KEYLEN]):
 def remove(_account: address, _proof: bytes32[KEYLEN]):
     assert msg.sender == self.operator
     assert self.status[_account] == 2
-    assert self.review_started[_account] + REVIEW_PERIOD >= blk.timestamp
+    assert self.review_started[_account] + REVIEW_PERIOD >= block.timestamp
     self._set(_account, 3, _proof)
