@@ -53,6 +53,9 @@ idToOwner: address[uint256]
 #@dev   Mapping from owner address to count of their tokens.
 ownerToNFTokenCount: uint256[address]
 
+#@dev   Number of total tokens
+totalSupply: public(uint256)
+
 #@dev   Contract owner. Has special privledges to mint new tokens.
 authority: public(address)
 
@@ -64,6 +67,7 @@ pendingAuthority: public(address)
 @public
 def __init__():
     self.authority = msg.sender
+    self.totalSupply = 0
 
 
 #
@@ -177,6 +181,7 @@ def mint(_to: address, _tokenId: uint256):
 
     # Change count tracking
     self.ownerToNFTokenCount[_to] += 1
+    self.totalSupply += 1
 
     # Log the transfer (A "mint" is a transfer from the zero addr)
     log.Transfer(ZERO_ADDRESS, _to, _tokenId)
@@ -197,6 +202,7 @@ def burn(_tokenId: uint256):
 
     # Change count tracking
     self.ownerToNFTokenCount[msg.sender] -= 1
+    self.totalSupply -= 1
 
     # Log the transfer (A "burn" is a transfer to the zero addr)
     log.Transfer(msg.sender, ZERO_ADDRESS, _tokenId)
