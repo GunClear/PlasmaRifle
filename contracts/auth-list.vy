@@ -35,7 +35,7 @@ root: public(bytes32)
 def __init__():
     self.operator = msg.sender
     # Compute and set empty root hash
-    empty_node: bytes32 = keccak256(convert(0, 'bytes32'))  # Default status
+    empty_node: bytes32 = keccak256(convert(0, bytes32))  # Default status
     for _ in range(160):
         empty_node = keccak256(concat(empty_node, empty_node))
     self.root = empty_node
@@ -56,12 +56,12 @@ def acceptOperatorNominee():
 # Update status entry, modify tree root, and emit sync event
 @private
 def _set(_account: address, _status: uint256, _proof: bytes32[160]):
-    node_hash: bytes32 = keccak256(convert(self.status[_account], 'bytes32'))
+    node_hash: bytes32 = keccak256(convert(self.status[_account], bytes32))
 
     # For recording the node updates as we go (root->leaf order)
     node_updates: bytes32[160]
     # Start the updates at the leaf
-    node_updates[160-1] = keccak256(convert(_status, 'bytes32'))
+    node_updates[160-1] = keccak256(convert(_status, bytes32))
 
     # Validate each step of the proof is correct (traverse leaf->root)
     # Also record node updates up the tree
@@ -72,7 +72,7 @@ def _set(_account: address, _status: uint256, _proof: bytes32[160]):
         # Keypath maps MSB:root->LSB:leaf, but we are traversing backwards
         # (e.g. path choice: leaf is bit0 and root is bit159)
         # so, this is how we check whether to branch right or left:
-        if bitwise_and(convert(_account, 'uint256'), shift(1, i)):
+        if bitwise_and(convert(_account, uint256), shift(1, i)) > 0:
             # Path goes to the right at `lvl`, so sibling is to our left
             # Update node to hash of current node and sibling
             node_hash = keccak256(concat(_proof[lvl], node_hash))
@@ -86,7 +86,7 @@ def _set(_account: address, _status: uint256, _proof: bytes32[160]):
             node_updates[lvl-1] = keccak256(concat(node_updates[lvl], _proof[lvl]))
 
     # Validate and update the root hash using the above methodology
-    if bitwise_and(convert(_account, 'uint256'), shift(1, 160-1)):
+    if bitwise_and(convert(_account, uint256), shift(1, 160-1)) > 0:
         # Path goes to the right at root, so sibling is to our left
         # Validate root matches hash of current node and sibling
         assert self.root == keccak256(concat(_proof[0], node_hash))
