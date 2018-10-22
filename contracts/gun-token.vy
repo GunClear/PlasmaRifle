@@ -110,6 +110,7 @@ def ownerOf(_tokenId: uint256) -> address:
 
 # @dev Transfers the ownership of an NFT to another address.
 # @notice   Throws unless `msg.sender` is the current owner
+#           Throws if `_from` is not `msg.sender`.
 #           Throws if `_to` is the zero address.
 #           Throws if `_tokenId` is not a valid NFT (aka is zero).
 #           When transfer is complete, this function checks if `_to` is a smart contract (code size > 0).
@@ -127,6 +128,8 @@ def safeTransferFrom(
         _tokenId: uint256,
         _data: bytes[1024]=""
     ):
+    # _from must be the transaction sender. Done for compatibility
+    assert _from == msg.sender
 
     # Check that _to is valid addresses (non-zero)
     assert _to != ZERO_ADDRESS
@@ -146,8 +149,7 @@ def safeTransferFrom(
     
     # If the reciever is a smart contract, then ensure it executes a "safe" transaction by validating the return code
     if(_to.codesize > 0):
-        returnValue: bytes32 = NFTReceiver(_to). \
-                onERC721Received(msg.sender, msg.sender, _tokenId, _data)
+        returnValue: bytes32 = NFTReceiver(_to).onERC721Received(msg.sender, msg.sender, _tokenId, _data)
         # Validate the return code is the correct method ID
         assert returnValue == method_id('onERC721Received(address,address,uint256,bytes)', bytes32)
 
