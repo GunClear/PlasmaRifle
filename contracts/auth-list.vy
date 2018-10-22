@@ -2,13 +2,11 @@
 # Accounts that are allowed to participate in a GunClear transaction
 # Merklized into a Simple Binary Merkle Tree for access
 
-KEYLEN: constant(int128) = 160  # addresses are 160 bits long
-
 # Event for listeners to synchronize with tree updates
 TreeUpdate: event({
         account: indexed(address),
         status: indexed(uint256),
-        nodes: bytes32[KEYLEN]  # Hash updates for account as key (len 160 bits)
+        nodes: bytes32[160]  # Hash updates for account as key (len 160 bits)
     })
 
 
@@ -18,7 +16,6 @@ pendingOperator: address
 
 
 # Review period before permanent modifications
-REVIEW_PERIOD: constant(timedelta) = 2592000  # 30*24*60*60 secs = 30 days
 review_started: timestamp[address]
 
 
@@ -39,7 +36,7 @@ def __init__():
     self.operator = msg.sender
     # Compute and set empty root hash
     empty_node: bytes32 = keccak256(convert(0, 'bytes32'))  # Default status
-    for _ in range(KEYLEN):
+    for _ in range(160):
         empty_node = keccak256(concat(empty_node, empty_node))
     self.root = empty_node
 
@@ -58,19 +55,19 @@ def acceptOperatorNominee():
 
 # Update status entry, modify tree root, and emit sync event
 @private
-def _set(_account: address, _status: uint256, _proof: bytes32[KEYLEN]):
+def _set(_account: address, _status: uint256, _proof: bytes32[160]):
     node_hash: bytes32 = keccak256(convert(self.status[_account], 'bytes32'))
 
     # For recording the node updates as we go (root->leaf order)
-    node_updates: bytes32[KEYLEN]
+    node_updates: bytes32[160]
     # Start the updates at the leaf
-    node_updates[KEYLEN-1] = keccak256(convert(_status, 'bytes32'))
+    node_updates[160-1] = keccak256(convert(_status, 'bytes32'))
 
     # Validate each step of the proof is correct (traverse leaf->root)
     # Also record node updates up the tree
-    for i in range(KEYLEN-2): # [0:KEYLEN-2]
+    for i in range(159): # [0:160-2]
         # We want to start at the leaf and merklize up
-        lvl: int128 = KEYLEN-1 - i  # lvl = (159 - [0:158]) = [159:1]
+        lvl: int128 = 160-1 - i  # lvl = (159 - [0:158]) = [159:1]
 
         # Keypath maps MSB:root->LSB:leaf, but we are traversing backwards
         # (e.g. path choice: leaf is bit0 and root is bit159)
@@ -89,7 +86,7 @@ def _set(_account: address, _status: uint256, _proof: bytes32[KEYLEN]):
             node_updates[lvl-1] = keccak256(concat(node_updates[lvl], _proof[lvl]))
 
     # Validate and update the root hash using the above methodology
-    if bitwise_and(convert(_key, 'uint256'), shift(1, KEYLEN-1)):
+    if bitwise_and(convert(_account, 'uint256'), shift(1, 160-1)):
         # Path goes to the right at root, so sibling is to our left
         # Validate root matches hash of current node and sibling
         assert self.root == keccak256(concat(_proof[0], node_hash))
@@ -111,7 +108,7 @@ def _set(_account: address, _status: uint256, _proof: bytes32[KEYLEN]):
 
 # The operator can authorize a user at any time
 @public
-def authorize(_account: address, _proof: bytes32[KEYLEN]):
+def authorize(_account: address, _proof: bytes32[160]):
     assert msg.sender == self.operator
     self.review_started[_account] = 0  # Just reset back to zero to recover gas from review
     self._set(_account, 1, _proof)
@@ -120,7 +117,7 @@ def authorize(_account: address, _proof: bytes32[KEYLEN]):
 # The operator can start the review cycle for a specific account
 # NOTE: Operator will call `authorize` again to cancel
 @public
-def review(_account: address, _proof: bytes32[KEYLEN]):
+def review(_account: address, _proof: bytes32[160]):
     assert msg.sender == self.operator
     assert self.status[_account] == 1
     self.review_started[_account] = block.timestamp
@@ -129,8 +126,8 @@ def review(_account: address, _proof: bytes32[KEYLEN]):
 
 # The operator can remove someone from the list after the review period
 @public
-def remove(_account: address, _proof: bytes32[KEYLEN]):
+def remove(_account: address, _proof: bytes32[160]):
     assert msg.sender == self.operator
     assert self.status[_account] == 2
-    assert self.review_started[_account] + REVIEW_PERIOD >= block.timestamp
+    assert self.review_started[_account] + 2592000 >= block.timestamp
     self._set(_account, 3, _proof)
