@@ -129,5 +129,5 @@ def review(_account: address, _proof: bytes32[160]):
 def remove(_account: address, _proof: bytes32[160]):
     assert msg.sender == self.operator
     assert self.status[_account] == 2
-    assert self.review_started[_account] + 2592000 >= block.timestamp
+    assert block.timestamp > self.review_started[_account] + 2592000
     self._set(_account, 3, _proof)
