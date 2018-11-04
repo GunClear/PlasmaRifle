@@ -1,87 +1,91 @@
 import pytest
+from eth_tester.exceptions import TransactionFailed
 
 
 @pytest.fixture
-def token(t):
-    return t.c('contracts/gun-token.vy')()
+def token(vy_deployer):
+    # We don't need the address...
+    package, _ = vy_deployer.deploy('gun-token')
+    return package.deployments.get_contract_instance('gun-token')
 
 
-def test_nominateAuthority(t, token):
+def test_nominateAuthority(w3, token):
     # The authority is whomever deployed the contract
-    assert token.authority() == t.a[0]
+    assert token.functions.authority().call() == w3.eth.accounts[0]
     # Only the authority can nominate a successor
-    with t.tx_fails:
-        token.nominateAuthority(t.a[1], transact={'from':t.a[1]})
-    token.nominateAuthority(t.a[1], transact={'from':t.a[0]})
+    with pytest.raises(TransactionFailed):
+        token.functions.nominateAuthority(w3.eth.accounts[1]).transact({'from':w3.eth.accounts[1]})
+    token.functions.nominateAuthority(w3.eth.accounts[1]).transact({'from':w3.eth.accounts[0]})
     # Nomination doesn't select an authority until accepted
-    assert token.authority() == t.a[0]
-    assert token.pendingAuthority() == t.a[1]
+    assert token.functions.authority().call() == w3.eth.accounts[0]
+    assert token.functions.pendingAuthority().call() == w3.eth.accounts[1]
     # No one else besides the nominee can accept
-    with t.tx_fails:
-        token.acceptNomination(transact={'from':t.a[0]})
-    with t.tx_fails:
-        token.acceptNomination(transact={'from':t.a[0]})
+    with pytest.raises(TransactionFailed):
+        token.functions.acceptNomination().transact({'from':w3.eth.accounts[0]})
+    with pytest.raises(TransactionFailed):
+        token.functions.acceptNomination().transact({'from':w3.eth.accounts[0]})
     # Only the nominee can accept
-    token.acceptNomination(transact={'from':t.a[1]})
-    assert token.authority() == t.a[1]
+    token.functions.acceptNomination().transact({'from':w3.eth.accounts[1]})
+    assert token.functions.authority().call() == w3.eth.accounts[1]
 
 
 TOKEN_ID = 123
 
 
-def test_mint(t, token):
-    assert token.balanceOf(t.a[1]) == 0  # For later
+def test_mint(w3, token):
+    assert token.functions.balanceOf(w3.eth.accounts[1]).call() == 0  # For later
     # Only the authority can mint
-    with t.tx_fails:
-        token.mint(t.a[1], TOKEN_ID, transact={'from':t.a[1]})
-    token.mint(t.a[1], TOKEN_ID, transact={'from':t.a[0]})
+    with pytest.raises(TransactionFailed):
+        token.functions.mint(w3.eth.accounts[1], TOKEN_ID).transact({'from':w3.eth.accounts[1]})
+    token.functions.mint(w3.eth.accounts[1], TOKEN_ID).transact({'from':w3.eth.accounts[0]})
     # The same token can't be minted twice
-    with t.tx_fails:
-        token.mint(t.a[2], TOKEN_ID, transact={'from':t.a[0]})
+    with pytest.raises(TransactionFailed):
+        token.functions.mint(w3.eth.accounts[2], TOKEN_ID).transact({'from':w3.eth.accounts[0]})
     # Minting a token increases the new owner's balance
-    assert token.balanceOf(t.a[1]) == 1
+    assert token.functions.balanceOf(w3.eth.accounts[1]).call() == 1
     # The new token is owned by the mintee
-    assert token.ownerOf(TOKEN_ID) == t.a[1]
+    assert token.functions.ownerOf(TOKEN_ID).call() == w3.eth.accounts[1]
 
 @pytest.fixture
-def token_m(t, token):
-    token.mint(t.a[1], TOKEN_ID, transact={'from':t.a[0]})
+def token_m(w3, token):
+    token.functions.mint(w3.eth.accounts[1], TOKEN_ID).transact({'from':w3.eth.accounts[0]})
     return token
 
 
-def test_burn(t, token_m):
+def test_burn(w3, token_m):
     # No one can burn a token they don't own
-    assert token_m.ownerOf(TOKEN_ID) != t.a[2]
-    with t.tx_fails:
-        token_m.burn(TOKEN_ID, transact={'from':t.a[2]})
+    assert token_m.functions.ownerOf(TOKEN_ID).call() != w3.eth.accounts[2]
+    with pytest.raises(TransactionFailed):
+        token_m.functions.burn(TOKEN_ID).transact({'from':w3.eth.accounts[2]})
     # Not even the authority
-    with t.tx_fails:
-        token_m.burn(TOKEN_ID, transact={'from':t.a[0]})
+    with pytest.raises(TransactionFailed):
+        token_m.functions.burn(TOKEN_ID).transact({'from':w3.eth.accounts[0]})
     # Only the owner can burn it
-    assert token_m.balanceOf(t.a[1]) == 1  # for later...
-    assert token_m.ownerOf(TOKEN_ID) == t.a[1]
-    token_m.burn(TOKEN_ID, transact={'from':t.a[1]})
+    assert token_m.functions.balanceOf(w3.eth.accounts[1]).call() == 1  # for later...
+    assert token_m.functions.ownerOf(TOKEN_ID).call() == w3.eth.accounts[1]
+    token_m.functions.burn(TOKEN_ID).transact({'from':w3.eth.accounts[1]})
     # Burning a token_m removes it from the supply
-    assert token_m.balanceOf(t.a[1]) == 0
+    assert token_m.functions.balanceOf(w3.eth.accounts[1]).call() == 0
     # An unowned token_m will throw when queried
-    with t.tx_fails:
-        token_m.ownerOf(TOKEN_ID)
+    with pytest.raises(TransactionFailed):
+        token_m.functions.ownerOf(TOKEN_ID).call()
 
 
-def test_safeTransferFrom_account(t, token_m):
-    assert token_m.balanceOf(t.a[1]) == 1
-    assert token_m.balanceOf(t.a[2]) == 0
-    assert token_m.ownerOf(TOKEN_ID) == t.a[1]
+def test_safeTransferFrom_account(w3, token_m):
+    assert token_m.functions.balanceOf(w3.eth.accounts[1]).call() == 1
+    assert token_m.functions.balanceOf(w3.eth.accounts[2]).call() == 0
+    assert token_m.functions.ownerOf(TOKEN_ID).call() == w3.eth.accounts[1]
     # No one other than the owner can transfer the token
-    with t.tx_fails:
-        token_m.safeTransferFrom(t.a[1], t.a[2], TOKEN_ID, transact={'from':t.a[2]})
+    with pytest.raises(TransactionFailed):
+        token_m.functions.safeTransferFrom(w3.eth.accounts[1], w3.eth.accounts[2], TOKEN_ID).transact({'from':w3.eth.accounts[2]})
     # An account can transfer to another account with no problems
-    token_m.safeTransferFrom(t.a[1], t.a[2], TOKEN_ID, transact={'from':t.a[1]})
-    assert token_m.ownerOf(TOKEN_ID) == t.a[2]
-    assert token_m.balanceOf(t.a[1]) == 0
-    assert token_m.balanceOf(t.a[2]) == 1    
+    token_m.functions.safeTransferFrom(w3.eth.accounts[1], w3.eth.accounts[2], TOKEN_ID).transact({'from':w3.eth.accounts[1]})
+    assert token_m.functions.ownerOf(TOKEN_ID).call() == w3.eth.accounts[2]
+    assert token_m.functions.balanceOf(w3.eth.accounts[1]).call() == 0
+    assert token_m.functions.balanceOf(w3.eth.accounts[2]).call() == 1    
 
 
+'''
 from vyper.compiler import compile as vyc
 from vyper.compiler import mk_full_signature as vya
 
@@ -124,17 +128,18 @@ def onERC721Received(
 
 
 def test_safeTransferFrom_contracts(t, token_m, good_receiver, bad_receiver):
-    assert token_m.balanceOf(t.a[1]) == 1
-    assert token_m.balanceOf(good_receiver.address) == 0
-    assert token_m.balanceOf(bad_receiver.address) == 0
-    assert token_m.ownerOf(TOKEN_ID) == t.a[1]
+    assert token_m.functions.balanceOf(w3.eth.accounts[1]).call() == 1
+    assert token_m.functions.balanceOf(good_receiver.address).call() == 0
+    assert token_m.functions.balanceOf(bad_receiver.address).call() == 0
+    assert token_m.functions.ownerOf(TOKEN_ID).call() == w3.eth.accounts[1]
     # To receive ERC721 tokens, a contract must implement
     # the full `onERC721Received()` handshake, not just the interface
-    with t.tx_fails:
-        token_m.safeTransferFrom(t.a[1], bad_receiver.address, TOKEN_ID, transact={'from':t.a[1]})
-    token_m.safeTransferFrom(t.a[1], good_receiver.address, TOKEN_ID, transact={'from':t.a[1]})
+    with pytest.raises(TransactionFailed):
+        token_m.functions.safeTransferFrom(w3.eth.accounts[1], bad_receiver.address, TOKEN_ID).transact({'from':w3.eth.accounts[1]})
+    token_m.functions.safeTransferFrom(w3.eth.accounts[1], good_receiver.address, TOKEN_ID).transact({'from':w3.eth.accounts[1]})
     # Contracts can own tokens
-    assert token_m.ownerOf(TOKEN_ID) == good_receiver.address
-    assert token_m.balanceOf(t.a[1]) == 0
-    assert token_m.balanceOf(good_receiver.address) == 1
-    assert token_m.balanceOf(bad_receiver.address) == 0
+    assert token_m.functions.ownerOf(TOKEN_ID).call() == good_receiver.address
+    assert token_m.functions.balanceOf(w3.eth.accounts[1]).call() == 0
+    assert token_m.functions.balanceOf(good_receiver.address).call() == 1
+    assert token_m.functions.balanceOf(bad_receiver.address).call() == 0
+'''
