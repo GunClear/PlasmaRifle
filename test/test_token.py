@@ -85,12 +85,12 @@ def test_safeTransferFrom_account(w3, token_m):
     assert token_m.functions.balanceOf(w3.eth.accounts[2]).call() == 1    
 
 
-'''
 from vyper.compiler import compile as vyc
 from vyper.compiler import mk_full_signature as vya
 
+
 @pytest.fixture
-def good_receiver(t):
+def good_receiver(w3):
     CODE = """
 @public
 def onERC721Received(
@@ -101,15 +101,19 @@ def onERC721Received(
     ) -> bytes32:
     return method_id("onERC721Received(address,address,uint256,bytes)", bytes32)
     """
-    return t.new_contract({
-            'abi': vya(CODE),
-            'bytecode': vyc(CODE),
-            'bytecode_runtime': vyc(CODE, bytecode_runtime=True)
-        })()
+    interface = {
+        'abi': vya(CODE),
+        'bytecode': vyc(CODE),
+        'bytecode_runtime': vyc(CODE, bytecode_runtime=True)
+    }
+    txn_hash = w3.eth.contract(**interface).constructor().transact()
+    address = w3.eth.waitForTransactionReceipt(txn_hash)['contractAddress']
+    from eth_utils import to_canonical_address  # Waiting on ethereum/pytest-ethereum #20
+    return w3.eth.contract(to_canonical_address(address), **interface)
 
 
 @pytest.fixture
-def bad_receiver(t):
+def bad_receiver(w3):
     CODE = """
 @public
 def onERC721Received(
@@ -120,14 +124,18 @@ def onERC721Received(
     ) -> bytes32:
     return method_id("NOT_RIGHT", bytes32)
     """
-    return t.new_contract({
-            'abi': vya(CODE),
-            'bytecode': vyc(CODE),
-            'bytecode_runtime': vyc(CODE, bytecode_runtime=True)
-        })()
+    interface = {
+        'abi': vya(CODE),
+        'bytecode': vyc(CODE),
+        'bytecode_runtime': vyc(CODE, bytecode_runtime=True)
+    }
+    txn_hash = w3.eth.contract(**interface).constructor().transact()
+    address = w3.eth.waitForTransactionReceipt(txn_hash)['contractAddress']
+    from eth_utils import to_canonical_address  # Waiting on ethereum/pytest-ethereum #20
+    return w3.eth.contract(to_canonical_address(address), **interface)
 
 
-def test_safeTransferFrom_contracts(t, token_m, good_receiver, bad_receiver):
+def test_safeTransferFrom_contracts(w3, token_m, good_receiver, bad_receiver):
     assert token_m.functions.balanceOf(w3.eth.accounts[1]).call() == 1
     assert token_m.functions.balanceOf(good_receiver.address).call() == 0
     assert token_m.functions.balanceOf(bad_receiver.address).call() == 0
@@ -142,4 +150,3 @@ def test_safeTransferFrom_contracts(t, token_m, good_receiver, bad_receiver):
     assert token_m.functions.balanceOf(w3.eth.accounts[1]).call() == 0
     assert token_m.functions.balanceOf(good_receiver.address).call() == 1
     assert token_m.functions.balanceOf(bad_receiver.address).call() == 0
-'''
