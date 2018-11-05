@@ -170,6 +170,14 @@ def _deployer(name, w3, contract_interface):
     return deploy
 
 
+def _loader(name, w3, contract_interface):
+    def load(address):
+        print("Getting already deployed contract {} @ {}".format(name, address))
+        return w3.eth.contract(address, **contract_interface)
+    return load
+        
+
+
 def console(interfaces):
     dev, _middleware = _keyfile_middleware(Path.home() / '.eth-dev.key')
     w3.middleware_stack.add(_middleware)
@@ -179,9 +187,16 @@ def console(interfaces):
 
     # Create interface deployers
     deployers = dict([(c, _deployer(c, w3, i)) for c, i in interfaces.items()])
+    loaders = dict([(c, _loader(c, w3, i)) for c, i in interfaces.items()])
 
     return IPython.terminal.embed.InteractiveShellEmbed(
-            user_ns={'w3': w3, 'deploy': deployers, 'dev': dev, 'smt': SparseMerkleTree()},
+            user_ns={
+                'w3': w3,
+                'deploy': deployers,
+                'load': loaders,
+                'dev': dev,
+                'smt': SparseMerkleTree()
+            },
             banner1="""
 Available contracts:
     {}
