@@ -4,6 +4,7 @@ users:
  - &Authority GunClear Platform Manager
  - &User Registered GunClear User
  - &Gunero Gunero Plasma Sidechain
+ - &Operators Gunero Plasma Sidechain Operators
  
 assets:
  - &GunToken token representing a known firearm
@@ -19,27 +20,21 @@ times:
 
 requirements:
  # Token contract requirements
- - The *TokenManager shall allow the *Authority to mint a new *GunToken to a *User.
- - The *TokenManager shall allow a *User to transfer their *GunToken to any Ethereum address.
- - The *TokenManager shall allow a *User to transfer their *GunToken into the *PlasmaBridge.
- - The *TokenManager shall allow any *User and the *Authority to burn any *GunToken they own.
+ - The *TokenManager shall allow the *Authority to mint a new *GunToken.
+ - The *TokenManager shall allow a *User to transfer their *GunToken to any other *User.
+ - The *TokenManager shall verify the correct handling of the *GunToken if transferred to a smart contract address.
+ - The *TokenManager shall allow a *User to transfer their *GunToken into the *PlasmaBridge iff they provide the nullifier.
+ - The *TokenManager shall allow any *User to burn any *GunToken they own.
  # Authlist contract requirements
- - The *Authlist shall allow the *Authority to change a *User's current status.
- - The *Authlist shall allow a *User to dispute their current status within a *DisputePeriod.
- - The *Authlist shall allow the *Authority to finalize a change in status after a *DisputePeriod.
- - Status changes in the *Authlist will be updated by the *Authority at least once during a *PlasmaCycle.
- - The *Authlist shall maintain the current merkle root of the associated list.
- - The *Authlist shall allow a *User to generate a merkle proof of inclusion without sharing their identity.
+ - The *Authlist shall allow the *Authority to change a *User's current status to authorized at any time.
+ - The *Authlist shall allow the *Authority to change a *User's current status to in review at any time.
+ - The *Authlist shall allow the affected *User to dispute a review status within the *DisputePeriod.
+ - The *Authlist shall allow the *Authority to finalize a change in status after the *DisputePeriod.
+ - The *Authlist shall maintain the current merkle root of the associated list for every status update.
+ - The *Authlist shall emit an event that allows a *User to keep track of updates to their merkle branch.
  # Plasma contract requirements
- - The *PlasmaBridge shall aaccept any *GunToken issued by the *Authority.
- - The *PlasmaBridge shall report the status of any *GunToken it has received.
- - The *PlasmaBridge shall allow a *User to withdraw a *GunToken they control at any time.
- - The *PlasmaBridge shall allow a *User to declare a *GunToken they control to be lost or stolen.
- - The *PlasmaBridge shall allow a *User who has declared a *GunToken they control to be lost or stolen to reset that status within a *DisputePeriod.
- - The *TokenManager shall allow the *Authority to withdraw a *GunToken that has been declared lost or stolen in the *PlasmaBridge after a *DisputePeriod.
- - The *PlasmaBridge shall allow a *User to claim a *GunToken they no longer have access to is inaccessible.
- - The *PlasmaBridge shall allow any other *User who controls a *GunToken that is claimed inaccessible to dispute this claim within a *DisputePeriod.
- - The *PlasmaBridge shall allow the *Authority to withdraw a *GunToken that is claimed inaccessible after a *DisputePeriod.
- - Block updates for the *Gunero network will be published at least once during a *PlasmaCycle.
- - A *GunToken cannot be withdrawn form or transferred within the *Gunero network more than once every *PlasmaCycle.
- 
+ - The *PlasmaBridge shall allow a deposit of any *GunToken that includes a valid nullifier with the deposit.
+ - The *PlasmaBridge shall emit an event including the nullifier for any *GunToken it has received.
+ - The *PlasmaBridge shall allow a *User to withdraw a *GunToken from *Gunero that they control at any time.
+ - The *PlasmaBridge shall allow the *Operators to publish the *Gunero state root hash at most once during a *PlasmaCycle.
+ - The *PlasmaBridge shall allow the *Operators to publish the *Authlist root hash at most once during a *PlasmaCycle.
