@@ -1,7 +1,7 @@
 extern crate plasma_rifle;
 
-use plasma_rifle::test;
+use plasma_rifle::trial;
 
 fn main() {
-    test();
+    trial();
 }
