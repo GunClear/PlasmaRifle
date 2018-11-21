@@ -1,3 +1,6 @@
 # Ignore rust build directory
 Cargo.lock
 target/
+
+# Contract package
+contracts.json
