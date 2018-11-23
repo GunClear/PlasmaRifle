@@ -30,7 +30,7 @@ $ python get-address.py $(cat ./sender.key) > ./sender.acct
 
 3. Deploy the authlist contract to the network
 ```bash
-$ python deploy.py --network rinkeby contracts/auth-list.vy > ./authlist.acct
+$ python deploy.py --network rinkeby auth-list > ./authlist.acct
 ```
 
 4. Add these addresses to the deployed Authorization List
