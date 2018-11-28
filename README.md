@@ -35,9 +35,11 @@ $ python deploy.py --network rinkeby auth-list > ./authlist.acct
 
 4. Add these addresses to the deployed Authorization List
 ```bash
-$ python authorize.py --network rinkeby $(cat ./authlist.acct) $(cat ./receiver.acct)
+$ python authorize.py --network rinkeby $(cat ./authlist.acct) $(cat ./receiver.acct) \
+    $(python get-branch.py --network rinkeby $(cat ./authlist.acct) $(cat ./receiver.acct))
 # Wait for txn to mine...
-$ python authorize.py --network rinkeby $(cat ./authlist.acct) $(cat ./sender.acct)
+$ python authorize.py --network rinkeby $(cat ./authlist.acct) $(cat ./sender.acct) \
+    $(python get-branch.py --network rinkeby $(cat ./authlist.acct) $(cat ./sender.acct))
 # Wait for txn to mine...
 ```
 
