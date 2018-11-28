@@ -43,9 +43,9 @@ $ python authorize.py --network rinkeby $(cat ./authlist.acct) $(cat ./sender.ac
 # Wait for txn to mine...
 ```
 
-5. Record the auth root hash (from Etherscan)
+5. Record the auth root hash
 ```bash
-$ echo "[ROOT HASH HERE]" > auth-root.hash
+$ python root.py --network rinkeby $(cat ./authlist.acct) > auth-root.hash
 ```
 
 6. Obtain Merkle Branch via Listener
