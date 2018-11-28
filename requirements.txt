@@ -1,0 +1,5 @@
+Click==7.0
+vyper==0.1.0b4
+eth-typing<2
+web3==4.8.1
+-e git+git@github.com:fubuloubu/py-trie.git@4cb21f508a8fed71bb1f4f97ecf8376d03ac603b#egg=trie
