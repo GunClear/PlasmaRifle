@@ -54,7 +54,7 @@ $ python get-branch.py --network rinkeby $(cat ./authlist.acct) $(cat ./sender.a
 
 7. Also, mint tokens!
 ```bash
-$ python deploy.py --network rinkeby contracts/gun-token.vy > ./token.acct
+$ python deploy.py --network rinkeby gun-token > ./token.acct
 # Wait for txn to mine...
 $ python mint.py --network rinkeby $(cat ./token.acct) [RANDOM HEX HERE] $(cat ./receiver.acct)
 # Wait for txn to mine...
