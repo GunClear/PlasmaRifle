@@ -12,6 +12,54 @@ and we will work on updating the documentation to address your issues when learn
 ## Testing
 
 
+## Demo
+Here are the steps for testing the demo:
+
+1. Generate two private keys (DO NOT USE THESE TO STORE FUNDS)
+```bash
+$ cd demo
+$ echo [PICK RANDOM NUMBER] > ./receiver.key
+$ echo [PICK RANDOM NUMBER] > ./sender.key
+```
+
+2. Get Ethereum account addresses for these keys (for later)
+```bash
+$ python get-address.py $(cat ./receiver.key) > ./receiver.acct
+$ python get-address.py $(cat ./sender.key) > ./sender.acct
+```
+
+3. Deploy the authlist contract to the network
+```bash
+$ python deploy.py --network rinkeby auth-list > ./authlist.acct
+```
+
+4. Add these addresses to the deployed Authorization List
+```bash
+$ python authorize.py --network rinkeby $(cat ./authlist.acct) $(cat ./receiver.acct)
+# Wait for txn to mine...
+$ python authorize.py --network rinkeby $(cat ./authlist.acct) $(cat ./sender.acct)
+# Wait for txn to mine...
+```
+
+5. Record the auth root hash (from Etherscan)
+```bash
+$ echo "[ROOT HASH HERE]" > auth-root.hash
+```
+
+6. Obtain Merkle Branch via Listener
+```bash
+$ python get-branch.py --network rinkeby $(cat ./authlist.acct) $(cat ./receiver.acct) > receiver-branch.ls
+$ python get-branch.py --network rinkeby $(cat ./authlist.acct) $(cat ./sender.acct) > sender-branch.ls
+```
+
+7. Also, mint tokens!
+```bash
+$ python deploy.py --network rinkeby gun-token > ./token.acct
+# Wait for txn to mine...
+$ python mint.py --network rinkeby $(cat ./token.acct) [RANDOM HEX HERE] $(cat ./receiver.acct)
+# Wait for txn to mine...
+```
+
 ## Release
 
 

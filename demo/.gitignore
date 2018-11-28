@@ -1,0 +1,9 @@
+# Demo files
+## Private keys
+*.key
+## Account and Contract Addresses
+*.acct
+## Hashes
+*.hash
+## List of Merkle branch hashes
+*.ls
