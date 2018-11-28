@@ -51,7 +51,6 @@ def int_to_bytes32(value: int) -> bytes:
     v = to_bytes(value).rjust(32, b'\x00')
     return v
 
-print(args.branch)
 branch = [to_bytes(hexstr=n) for n in args.branch]
 
 from trie.smt import calc_root
