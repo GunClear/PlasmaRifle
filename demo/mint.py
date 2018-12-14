@@ -1,7 +1,8 @@
 import json
 import web3
 import argparse
-from click import confirm
+import click
+import importlib
 
 
 def _keyfile_middleware(keyfile_path):
@@ -27,7 +28,9 @@ if __name__ == '__main__':
         abi = json.loads(f.read())['contracts']['gun-token']['abi']
     
     ap = argparse.ArgumentParser("Deploy contracts")
+    # NOTE Rinkeby doesn't work with web3py
     ap.add_argument("--network",  default="ropsten", \
+            choices=["ropsten", "kovan", "mainnet"], \
             help="Network to deploy to")
     ap.add_argument("address", type=str, \
             help="Token contract address")
@@ -38,13 +41,16 @@ if __name__ == '__main__':
 
     args = ap.parse_args()
     
+    w3 = importlib.import_module("web3.auto.infura."+args.network).w3
+    
     from pathlib import Path
-    #TODO get 'w3' from args.network
     dev, _middleware = _keyfile_middleware(Path.home() / '.eth-dev.key')
     w3.middleware_stack.add(_middleware)
 
     token = w3.eth.contract(args.address, abi=abi)
-    if confirm("Do you want to mint token {} to {}?".format(args.tokenid, args.recipient), err=True):
+    if click.confirm("Do you want to mint token {} to {}?".format(args.tokenid, args.recipient), err=True):
         txn_hash = token.functions.mint(args.recipient, args.tokenid).transact({'from':dev.address})
+        click.echo("https://"+("" if args.network is "mainnet" else args.network+".")+\
+                "etherscan.io/tx/"+txn_hash.hex(), err=True)
         receipt = w3.eth.waitForTransactionReceipt(txn_hash)
         print("SUCCESS!" if receipt.status == 1 else "FAIL!")

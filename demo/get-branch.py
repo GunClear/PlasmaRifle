@@ -69,7 +69,7 @@ class Listener:
         self._filter = self._tree.events.TreeUpdate().createFilter(fromBlock=0)
         # Iterate over all previously logged entries
         for log in self._filter.get_all_entries():
-            self._proof.merge(
+            self._proof.update(
                     to_canonical_address(log.args.account),
                     int_to_bytes32(log.args.status),
                     log.args.nodes
@@ -78,7 +78,7 @@ class Listener:
     def sync(self):
         # Iterate over last unchecked logs, update proof for them
         for log in self._filter.get_new_entries():
-            self._proof.merge(
+            self._proof.update(
                     to_canonical_address(log.args.account),
                     int_to_bytes32(log.args.status),
                     log.args.nodes
@@ -102,15 +102,15 @@ class Listener:
         return status
 
 
-from web3.auto.infura.ropsten import w3
-
 import json
 with open('../contracts.json', 'r') as f:
     interface = json.loads(f.read())['contracts']['auth-list']
 
 import argparse
 ap = argparse.ArgumentParser("Deploy contracts")
+# NOTE Rinkeby doesn't work with web3py
 ap.add_argument("--network",  default="ropsten", \
+        choices=["ropsten", "kovan", "mainnet"], \
         help="Network to deploy to")
 ap.add_argument("authlist", type=str, \
         help="Authorization list address")
@@ -118,7 +118,9 @@ ap.add_argument("account", type=str, \
         help="Account address to authorize")
 
 args = ap.parse_args()
-#TODO get 'w3' from args.network
+
+import importlib
+w3 = importlib.import_module("web3.auto.infura."+args.network).w3
 
 listener = Listener(w3, args.account, args.authlist)
 
