@@ -58,7 +58,7 @@ $ python get-branch.py --network ropsten $(cat ./authlist.acct) $(cat ./sender.a
 ```bash
 $ python deploy.py --network ropsten gun-token > ./token.acct
 # Wait for txn to mine...
-$ python mint.py --network ropsten $(cat ./token.acct) [RANDOM HEX HERE] $(cat ./receiver.acct)
+$ python mint.py --network ropsten $(cat ./token.acct) [PICK RANDOM NUMBER] $(cat ./receiver.acct)
 # Wait for txn to mine...
 ```
 
