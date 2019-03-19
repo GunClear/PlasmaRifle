@@ -37,7 +37,7 @@ if __name__ == '__main__':
     ap.add_argument("tokenid", type=int, \
             help="Token UID (256 bit integer)")
     ap.add_argument("recipient", type=str, \
-            help="Token UID (32 byte hash)")
+            help="Receiver's address (20 byte hash)")
 
     args = ap.parse_args()
     

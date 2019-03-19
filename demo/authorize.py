@@ -32,7 +32,7 @@ ap.add_argument("authlist", type=str, \
 ap.add_argument("account", type=str, \
         help="Account address to authorize")
 ap.add_argument("branch", type=str, nargs='*', \
-        help="Account Branch List")
+        help="List of hashes in Merkle Branch Proof")
 
 args = ap.parse_args()
 

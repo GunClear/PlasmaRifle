@@ -115,7 +115,7 @@ ap.add_argument("--network",  default="ropsten", \
 ap.add_argument("authlist", type=str, \
         help="Authorization list address")
 ap.add_argument("account", type=str, \
-        help="Account address to authorize")
+        help="Account address to get Merkle Branch Proof for")
 
 args = ap.parse_args()
 
